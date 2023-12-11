@@ -14,7 +14,10 @@ Coupled with the right data and the right training recipe, you can get an excell
 
 
 ## Pre-requisites
-0. Build Monotonic Alignment Search and run preprocessing if you use your own datasets.
+
+0. Install env
+
+1. Build Monotonic Alignment Search and run preprocessing if you use your own datasets.
 ```sh
 # Cython-version Monotonoic Alignment Search
 cd monotonic_align
@@ -22,3 +25,23 @@ mkdir monotonic_align
 python setup.py build_ext --inplace
 cd ..
 ```
+
+2. Option: create a new checkpoint
+<details>
+  <summary>Open for details</summary>
+
+  ### Heading
+  1. Foo
+  2. Bar
+     * Baz
+     * Qux
+
+  ### Some Javascript
+  ```js
+  function logSomething(something) {
+    console.log('Something', something);
+  }
+  ```
+</details>
+
+3. 
