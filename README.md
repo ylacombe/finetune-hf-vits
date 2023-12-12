@@ -18,12 +18,6 @@ Finetuning VITS or MMS requires multiples stages to be completed in successive o
 4. [Optional - how to use the finetuned model](#4-inference)
 
 
-TODO: 
-- Add automatic space deployment?
-- Report to wandb
-- Mention GPU usage and so on
-- Mention Spaces
-
 ## License
 The VITS checkpoints are released under the permissive [MIT License](https://opensource.org/license/mit/). The MMS checkpoints, on the other hand, are licensed under [CC BY-NC 4.0](https://creativecommons.org/licenses/by-nc/4.0/), a non-commercial license. 
 
