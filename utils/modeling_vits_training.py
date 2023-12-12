@@ -1847,10 +1847,13 @@ class VitsDiscriminator(VitsPreTrainedModel):
     def __init__(self, config):
         super().__init__(config)
 
-        self.discriminators = nn.ModuleList(
-            [VitsHifiGanDiscriminatorScaleResidualBlock(config.discriminator_scale_channels, config.leaky_relu_slope)]
-        )
-
+        if config.discriminator_scale_channels is not None:
+            self.discriminators = nn.ModuleList(
+                [VitsHifiGanDiscriminatorScaleResidualBlock(config.discriminator_scale_channels, config.leaky_relu_slope)]
+            )
+        else:
+            self.discriminators = nn.ModuleList([])
+        
         self.discriminators.extend(
             [
                 VitsHifiGanDiscriminatorPeriodResidualBlock(
