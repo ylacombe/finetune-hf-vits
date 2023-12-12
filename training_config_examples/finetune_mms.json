@@ -4,7 +4,7 @@
     "hub_model_id": "ylacombe/mms-tts-guj-train",
     "report_to": ["wandb"],
     "overwrite_output_dir": true,
-    "output_dir": "/home/yoach/tmp/vits_finetuned_guj",
+    "output_dir": "./tmp/vits_finetuned_guj",
 
     "dataset_name": "ylacombe/google-gujarati",    
     "dataset_config_name": "male", 

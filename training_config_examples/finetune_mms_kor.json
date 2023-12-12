@@ -4,7 +4,7 @@
     "hub_model_id": "ylacombe/mms-tts-kor-finetuned",
     "report_to": ["wandb"],
     "overwrite_output_dir": true,
-    "output_dir": "/home/yoach/tmp/vits_finetuned_kor",
+    "output_dir": "./tmp/vits_finetuned_kor",
 
     "dataset_name": "PolyAI/minds14",    
     "dataset_config_name": "ko-KR", 

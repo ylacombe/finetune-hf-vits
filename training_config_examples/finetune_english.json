@@ -4,7 +4,7 @@
     "hub_model_id": "vits_ljs_welsh_female_monospeaker",
     "report_to": ["wandb"],
     "overwrite_output_dir": true,
-    "output_dir": "/home/yoach/tmp/vits_finetuned",
+    "output_dir": "./tmp/vits_finetuned",
 
     "dataset_name": "ylacombe/english_dialects",    
     "dataset_config_name": "welsh_female", 
