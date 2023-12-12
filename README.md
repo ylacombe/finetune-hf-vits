@@ -1,12 +1,22 @@
 # Finetune VITS and MMS using HuggingFace's tools
 
-[VITS](https://huggingface.co/docs/transformers/model_doc/vits) is a light weight, low-latency TTS model.
-It was proposed in 2021, in [Conditional Variational Autoencoder with Adversarial Learning for End-to-End Text-to-Speech](https://arxiv.org/abs/2106.06103) by Jaehyeon Kim, Jungil Kong, Juhee Son. 
+## Introduction
 
-Massively Multilingual Speech ([MMS](https://arxiv.org/abs/2305.13516)) models are light-weight, low-latency TTS models based on the [VITS architecture](https://huggingface.co/docs/transformers/model_doc/vits). They support [1107 languages](https://huggingface.co/facebook/mms-tts#supported-languages). You can find more details about the supported languages and their ISO 639-3 codes in the [MMS Language Coverage Overview](https://dl.fbaipublicfiles.com/mms/misc/language_coverage_mms.html),
-and see all MMS-TTS checkpoints on the Hugging Face Hub: [facebook/mms-tts](https://huggingface.co/models?sort=trending&search=facebook%2Fmms-tts).
-    
-Coupled with the right data and the right training recipe, you can get an excellent finetuned version of every MMS checkpoints in **20 minutes** with as little as **80 to 150 samples**.
+[VITS](https://huggingface.co/docs/transformers/model_doc/vits) is a light weight, low-latency model for English text-to-speech (TTS). Massively Multilingual Speech ([MMS](https://huggingface.co/docs/transformers/model_doc/mms#speech-synthesis-tts)) is an extension of VITS for multilingual TTS, that supports over [1100 languages](https://huggingface.co/facebook/mms-tts#supported-languages). 
+
+Both use the same underlying VITS architecture, consisting of a discriminator and a generator for GAN-based training. They differ in their tokenizers: the VITS tokenizer transforms English input text into phonemes, while the MMS tokenizer transforms input text into character-based tokens.
+
+You should fine-tune VITS-based checkpoints if you want to use a permissive English TTS model and fine-tune MMS-based checkpoints for every other cases.
+
+Coupled with the right data and the following training recipe, you can get an excellent finetuned version of every VITS/MMS checkpoints in **20 minutes** with as little as **80 to 150 samples**.
+
+Finetuning VITS or MMS requires multiples stages to be completed in successive order:
+
+1. [Install requirements](#1-requirements)
+2. [Choose or create the initial model](#2-model-selection)
+3. [Finetune the model](#3-finetuning)
+4. [Optional - how to use the finetuned model](#4-inference)
+
 
 TODO: 
 - Add automatic space deployment?
@@ -14,9 +24,104 @@ TODO:
 - Mention GPU usage and so on
 - Mention Spaces
 
+## License
+The VITS checkpoints are released under the permissive [MIT License](https://opensource.org/license/mit/). The MMS checkpoints, on the other hand, are licensed under [CC BY-NC 4.0](https://creativecommons.org/licenses/by-nc/4.0/), a non-commercial license. 
 
-> [!NOTE]
-> VITS is under the MIT license, a permissive license, but MMS checkpoints are under [CC BY-NC 4.0](https://creativecommons.org/licenses/by-nc/4.0/) a non-commercial license.
+**Note:** Any finetuned models derived from these checkpoints will inherit the same licenses as their respective base models. **Please ensure that you comply with the terms of the applicable license when using or distributing these models.**
+    
+
+## 1. Requirements
+
+
+0. Install common requirements.
+
+```sh
+pip install -r requirements.txt
+```
+
+1. Link your Hugging Face account so that you can pull/push model repositories on the Hub. This will allow you to save the finetuned weights on the Hub so that you can share them with the community and reuse them easily. Run the command:
+
+```bash
+git config --global credential.helper store
+huggingface-cli login
+```
+And then enter an authentication token from https://huggingface.co/settings/tokens. Create a new token if you do not have one already. You should make sure that this token has "write" privileges.
+
+
+2. Build the monotonic alignment search function using cython. This is absolutely necessary since the Python-native-version is awfully slow.
+```sh
+# Cython-version Monotonoic Alignment Search
+cd monotonic_align
+mkdir monotonic_align
+python setup.py build_ext --inplace
+cd ..
+```
+
+
+3. (**Optional**) If you're using an **original VITS checkpoint**, as opposed to MMS checkpoints, install **phonemizer**.
+
+Follow steps indicated [here](https://bootphon.github.io/phonemizer/install.html).
+
+<details>
+  <summary>Open for an example on Debian/Unbuntu </summary>
+
+E.g, if you're on Debian/Unbuntu:
+```sh
+# Install dependencies
+sudo apt-get install festival espeak-ng mbrola
+# Install phonemizer
+pip install phonemizer
+```
+</details>
+
+4. (**Optional**) With MMS checkpoints, **some languages** require to install **uroman**.
+
+<details>
+  <summary>Open for details </summary>
+    
+Some languages require to use `uroman` before feeding the text to `VitsTokenizer`, since currently the tokenizer does not support performing the pre-processing itself.
+
+To do this, you need to clone the uroman repository to your local machine and set the bash variable UROMAN to the local path:
+
+```sh
+git clone https://github.com/isi-nlp/uroman.git
+cd uroman
+export UROMAN=$(pwd)
+```
+
+The rest is taking care of by the training script. Don't forget to adapt the inference snippet as indicated [here](#use-the-finetuned-models).
+
+</details>
+
+## 2. Model selection
+
+There are two options:
+
+**Option 1: a training checkpoint is already available**
+
+In that case, you're lucky and you pass directly to the next step 🤗.
+
+**Option 2: no training checkpoint is available for your language**
+
+Let's say that you want have a text-to-speech dataset in Ghari, a Malayo-Polynesian language. First identify if there is a MMS checkpoint trained on this language by searching for the language in the [MMS Language Coverage Overview](https://dl.fbaipublicfiles.com/mms/misc/language_coverage_mms.html). If it is TTS-supported, identify the ISO 693-3 language code, here `gri`.
+
+Contrary to inference, finetuning requires the use of a discriminator that needs to be converted. 
+So you want to first creates a new checkpoint with this converted discriminator.
+
+0. (Do once) - create a new checkpoint that includes the discriminator. See [here](#convert-a-discriminator-checkpoint) for more details on how to convert the discriminator.
+In the following steps, replace `gri` with the language code you identified [here](https://dl.fbaipublicfiles.com/mms/misc/language_coverage_mms.html) and DISCRIMINATOR_TEMPORARY_LOCATION with where you want to download the weights.
+
+- Download the original discriminator weights locally.  
+```sh
+cd DISCRIMINATOR_TEMPORARY_LOCATION
+wget https://huggingface.co/facebook/mms-tts/resolve/main/full_models/gri/D_100000.pth?download=true -O "gri_D_100000.pth"
+```
+- Now convert the weights, and optionally push them to the hub. Simply remove `--push_to_hub TRAIN_CHECKPOINT_NAME` if you don't want to push to the hub:
+```sh
+cd PATH_TO_THIS_REPO
+python convert_original_discriminator_checkpoint.py --checkpoint_path PATH_TO_gri_D_10000.pth --generator_checkpoint_path "facebook/mms-tts-gri" --pytorch_dump_folder_path LOCAL_PATH_WHERE_TO_STORE_CHECKPOINT
+--push_to_hub TRAIN_CHECKPOINT_NAME
+```
 
 ---------------------
 
@@ -88,12 +193,7 @@ accelerate launch run_vits_finetuning.py ./training_config_examples/finetune_mms
 <details> 
   <summary>Open for details steps</summary>
     
-Let's say that you want have a text-to-speech dataset in Ghari, a Malayo-Polynesian language. First identify if there is a MMS checkpoint trained on this language by searching for the language in the [MMS Language Coverage Overview](https://dl.fbaipublicfiles.com/mms/misc/language_coverage_mms.html). If it is TTS-supported, identify the ISO 693-3 language code, here `gri`.
 
-Contrary to inference, finetuning requires the use of a discriminator that needs to be converted. 
-So you want to first creates a new checkpoint with this converted discriminator.
-
-0. (Do once) - create a new checkpoint that includes the discriminator. See [here](#convert-a-discriminator-checkpoint) for more details on how to convert the discriminator.
 
 1. Update this [configuration template](training_config_examples/finetune_mms.json) by:
 * updating the `project_name` and the output artefacts (`hub_model_id`, `output_dir`) to keep track of the model.
@@ -117,68 +217,7 @@ accelerate launch run_vits_finetuning.py ./training_config_examples/finetune_mms
 
 -----------------------------
 
-## Installation steps
 
-0. Install common requirements.
-
-```sh
-pip install -r requirements.txt
-```
-
-1. Link your Hugging Face account so that you can pull/push model repositories on the Hub. This will allow you to save the finetuned weights on the Hub so that you can share them with the community and reuse them easily. Run the command:
-
-```bash
-git config --global credential.helper store
-huggingface-cli login
-```
-And then enter an authentication token from https://huggingface.co/settings/tokens. Create a new token if you do not have one already. You should make sure that this token has "write" privileges.
-
-
-2. Build the monotonic alignment search function using cython. This is absolutely necessary since the Python-native-version is awfully slow.
-```sh
-# Cython-version Monotonoic Alignment Search
-cd monotonic_align
-mkdir monotonic_align
-python setup.py build_ext --inplace
-cd ..
-```
-
-**Optional steps depending on the checkpoint/language you're using.**
-
-3. (Optional) If you're using an original VITS checkpoint, as opposed to MMS checkpoints, install **phonemizer**.
-
-Follow steps indicated [here](https://bootphon.github.io/phonemizer/install.html).
-
-<details>
-  <summary>Open for an example on Debian/Unbuntu </summary>
-
-E.g, if you're on Debian/Unbuntu:
-```sh
-# Install dependencies
-sudo apt-get install festival espeak-ng mbrola
-# Install phonemizer
-pip install phonemizer
-```
-</details>
-
-4. (Optional) With MMS checkpoints, some languages require to install **uroman**.
-
-<details>
-  <summary>Open for details </summary>
-    
-Some languages require to use `uroman` before feeding the text to `VitsTokenizer`, since currently the tokenizer does not support performing the pre-processing itself.
-
-To do this, you need to clone the uroman repository to your local machine and set the bash variable UROMAN to the local path:
-
-```sh
-git clone https://github.com/isi-nlp/uroman.git
-cd uroman
-export UROMAN=$(pwd)
-```
-
-The rest is taking care of by the training script. Don't forget to adapt the inference snippet as indicated [here](#use-the-finetuned-models).
-
-</details>
 
 
 ## Finetune VITS and MMS
@@ -268,18 +307,11 @@ speech = synthesiser(uromanized_text)
 scipy.io.wavfile.write("finetuned_output.wav", rate=speech["sampling_rate"], data=speech["audio"])
 ```
 
-## Convert a discriminator checkpoint
+## Acknowledgements
 
-In the following steps, replace `gri` with the language code you identified [here](https://dl.fbaipublicfiles.com/mms/misc/language_coverage_mms.html) and DISCRIMINATOR_TEMPORARY_LOCATION with where you want to download the weights.
+It was proposed in 2021, in [Conditional Variational Autoencoder with Adversarial Learning for End-to-End Text-to-Speech](https://arxiv.org/abs/2106.06103) by Jaehyeon Kim, Jungil Kong, Juhee Son. 
 
-- Download the original discriminator weights locally.  
-```sh
-cd DISCRIMINATOR_TEMPORARY_LOCATION
-wget https://huggingface.co/facebook/mms-tts/resolve/main/full_models/gri/D_100000.pth?download=true -O "gri_D_100000.pth"
-```
-- Now convert the weights, and optionally push them to the hub. Simply remove `--push_to_hub TRAIN_CHECKPOINT_NAME` if you don't want to push to the hub:
-```sh
-cd PATH_TO_THIS_REPO
-python convert_original_discriminator_checkpoint.py --checkpoint_path PATH_TO_gri_D_10000.pth --generator_checkpoint_path "facebook/mms-tts-gri" --pytorch_dump_folder_path LOCAL_PATH_WHERE_TO_STORE_CHECKPOINT
---push_to_hub TRAIN_CHECKPOINT_NAME
-```
+[VITS](https://huggingface.co/docs/transformers/model_doc/vits) is a light weight, low-latency TTS model.
+
+Massively Multilingual Speech ([MMS](https://arxiv.org/abs/2305.13516)) models are light-weight, low-latency TTS models based on the [VITS architecture](https://huggingface.co/docs/transformers/model_doc/vits). They support [1107 languages](https://huggingface.co/facebook/mms-tts#supported-languages). You can find more details about the supported languages and their ISO 639-3 codes in the [MMS Language Coverage Overview](https://dl.fbaipublicfiles.com/mms/misc/language_coverage_mms.html),
+and see all MMS-TTS checkpoints on the Hugging Face Hub: [facebook/mms-tts](https://huggingface.co/models?sort=trending&search=facebook%2Fmms-tts).
