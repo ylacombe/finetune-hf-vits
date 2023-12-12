@@ -243,7 +243,11 @@ class VitsFeatureExtractor(SequenceFeatureExtractor):
         )
 
         # make sure list is in array format
-        input_features = torch.tensor(padded_inputs.get("input_features")).transpose(1, 2).transpose(0, 1)
+        if isinstance(padded_inputs.get("input_features"),list):
+            input_features = torch.tensor(padded_inputs.get("input_features")).transpose(1, 2).transpose(0, 1)
+        else:
+            input_features = padded_inputs.get("input_features").clone().detach().transpose(1, 2).transpose(0, 1)
+
 
         input_features = self._torch_extract_fbank_features(input_features[0])
 

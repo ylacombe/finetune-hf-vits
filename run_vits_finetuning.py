@@ -22,18 +22,16 @@ from tqdm.auto import tqdm
 
 import transformers
 from transformers import (
-    AutoConfig,
     AutoTokenizer,
     HfArgumentParser,
     TrainingArguments,
 )
 from transformers.feature_extraction_utils import BatchFeature
-from transformers.models.vits.modeling_vits import slice_segments
 from transformers.optimization import get_scheduler
 from transformers.trainer_pt_utils import LengthGroupedSampler
 from transformers.trainer_utils import get_last_checkpoint, is_main_process
 from transformers.utils import send_example_telemetry
-from utils import plot_alignment_to_numpy, plot_spectrogram_to_numpy, VitsDiscriminator, VitsModelForPreTraining, VitsFeatureExtractor
+from utils import plot_alignment_to_numpy, plot_spectrogram_to_numpy, VitsDiscriminator, VitsModelForPreTraining, VitsFeatureExtractor, slice_segments, VitsConfig
 
 
 if is_wandb_available():
@@ -128,7 +126,7 @@ class VITSTrainingArguments(TrainingArguments):
         default=True,
         metadata={
             "help": (
-                "Whether or not to perform scheduler steps per epoch or per steps. If `True`, the scheduler will be `ExponentialLR` parametrized with `lr_decay`"
+                "Whether or not to perform scheduler steps per epoch or per steps. If `True`, the scheduler will be `ExponentialLR` parametrized with `lr_decay`."
             )
         },
     )
@@ -140,11 +138,11 @@ class VITSTrainingArguments(TrainingArguments):
 
     weight_duration: float = field(default=1.0, metadata={"help": "Duration loss weight."})
 
-    weight_kl: float = field(default=1.0, metadata={"help": "KL loss weight."})
+    weight_kl: float = field(default=1.5, metadata={"help": "KL loss weight."})
 
-    weight_mel: float = field(default=45.0, metadata={"help": "Mel-spectrogram loss weight"})
+    weight_mel: float = field(default=35.0, metadata={"help": "Mel-spectrogram loss weight"})
 
-    weight_disc: float = field(default=1.0, metadata={"help": "Discriminator loss weight"})
+    weight_disc: float = field(default=3.0, metadata={"help": "Discriminator loss weight"})
 
     weight_gen: float = field(default=1.0, metadata={"help": "Generator loss weight"})
 
@@ -272,15 +270,6 @@ class DataTrainingArguments:
         default=False,
         metadata={"help": "Whether the input waveform should be normalized."},
     )
-    language: str = field(
-        default=None,
-        metadata={
-            "help": (
-                "Language for multilingual fine-tuning. This argument should be set for multilingual fine-tuning "
-                "only. For English speech recognition, it should be set to `None`."
-            )
-        },
-    )
     full_generation_sample_text: str = field(
         default="This is a test, let's see what comes out of this.",
         metadata={
@@ -306,8 +295,6 @@ class DataCollatorTTSWithPadding:
             The tokenizer used for processing the data.
         forward_attention_mask (`bool`)
             Whether to return attention_mask.
-        audio_column_name (`str`)
-            Name of the audio column name from the input dataset
     """
 
     tokenizer: Any
@@ -634,7 +621,7 @@ def main():
     #
     # Distributed training:
     # The .from_pretrained methods guarantee that only one local process can concurrently
-    config = AutoConfig.from_pretrained(
+    config = VitsConfig.from_pretrained(
         model_args.config_name if model_args.config_name else model_args.model_name_or_path,
         cache_dir=model_args.cache_dir,
         revision=model_args.model_revision,
@@ -656,16 +643,16 @@ def main():
         revision=model_args.model_revision,
         token=model_args.token,
         trust_remote_code=model_args.trust_remote_code,
-        language=data_args.language,
         verbose=False,
     )
 
     # 6. Resample speech dataset if necessary
     dataset_sampling_rate = next(iter(raw_datasets.values())).features[data_args.audio_column_name].sampling_rate
     if dataset_sampling_rate != feature_extractor.sampling_rate:
-        raw_datasets = raw_datasets.cast_column(
-            data_args.audio_column_name, datasets.features.Audio(sampling_rate=feature_extractor.sampling_rate)
-        )
+        with training_args.main_process_first(desc="resample"):
+            raw_datasets = raw_datasets.cast_column(
+                data_args.audio_column_name, datasets.features.Audio(sampling_rate=feature_extractor.sampling_rate)
+            )
 
     # 7. Preprocessing the datasets.
     # We need to read the audio files as arrays and tokenize the targets.
@@ -685,11 +672,12 @@ def main():
     # return attention_mask for Vits models
     forward_attention_mask = True
 
-    if data_args.max_train_samples is not None:
-        raw_datasets["train"] = raw_datasets["train"].select(range(data_args.max_train_samples))
+    with training_args.main_process_first(desc="select range of samples"):
+        if data_args.max_train_samples is not None:
+            raw_datasets["train"] = raw_datasets["train"].select(range(data_args.max_train_samples))
 
-    if data_args.max_eval_samples is not None:
-        raw_datasets["eval"] = raw_datasets["eval"].select(range(data_args.max_eval_samples))
+        if data_args.max_eval_samples is not None:
+            raw_datasets["eval"] = raw_datasets["eval"].select(range(data_args.max_eval_samples))
 
     speaker_id_dict = {}
     if speaker_id_column_name is not None:
@@ -703,10 +691,11 @@ def main():
                         input_columns=[speaker_id_column_name],
                     )
 
-            speaker_id_dict = {
-                speaker_id: i for (i, speaker_id) in enumerate(set(raw_datasets["train"][speaker_id_column_name]))
-            }
-            new_num_speakers = len(speaker_id_dict)
+            with training_args.main_process_first(desc="get speaker id dict"):
+                speaker_id_dict = {
+                    speaker_id: i for (i, speaker_id) in enumerate(set(raw_datasets["train"][speaker_id_column_name]))
+                }
+                new_num_speakers = len(speaker_id_dict)
 
     def prepare_dataset(batch):
         # process target audio
@@ -758,7 +747,6 @@ def main():
     with training_args.main_process_first(desc="dataset map pre-processing"):
         # convert from np.float64 to np.float32
         vectorized_datasets.set_format(type="numpy", columns=[audio_column_name])
-
         vectorized_datasets = vectorized_datasets.map(
             prepare_dataset,
             remove_columns=remove_columns,
@@ -795,8 +783,9 @@ def main():
         trust_remote_code=model_args.trust_remote_code,
     )
 
-    # apply weight norms
+    
     with training_args.main_process_first(desc="apply_weight_norm"):
+        # apply weight norms
         model.decoder.apply_weight_norm()
         for flow in model.flow.flows:
             torch.nn.utils.weight_norm(flow.conv_pre)

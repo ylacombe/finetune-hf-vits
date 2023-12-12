@@ -11,6 +11,9 @@ Coupled with the right data and the right training recipe, you can get an excell
 TODO: 
 - Uroman - add support and guidance: https://huggingface.co/docs/transformers/v4.36.0/en/model_doc/vits#usage-examples
 - Add automatic space deployment?
+- Report to wandb
+- Mention GPU usage and so on
+- Mention Spaces
 
 
 > [!NOTE]
@@ -43,7 +46,7 @@ First and foremost, [install everything](#installation-steps).
   2. Launch training:
 
 ```sh
-accelerate launch run_vits_finetuning.py ./training_configs/finetune_english.json
+accelerate launch run_vits_finetuning.py ./training_config_examples/finetune_english.json
 ```
 
   3. Use your [finetuned model](#use-the-finetuned-models)
@@ -75,7 +78,7 @@ accelerate launch run_vits_finetuning.py ./training_configs/finetune_english.jso
   2. Launch training:
 
 ```sh
-accelerate launch run_vits_finetuning.py ./training_configs/finetune_mms.json
+accelerate launch run_vits_finetuning.py ./training_config_examples/finetune_mms.json
 ```
 
   3. Use your [finetuned model](#use-the-finetuned-models)
@@ -106,7 +109,7 @@ So you want to first creates a new checkpoint with this converted discriminator.
 2. Launch training:
 
 ```sh
-accelerate launch run_vits_finetuning.py ./training_configs/finetune_mms.json
+accelerate launch run_vits_finetuning.py ./training_config_examples/finetune_mms.json
 ```
 
 3. Use your finetuned model </details>

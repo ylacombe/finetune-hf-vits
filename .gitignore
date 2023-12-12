@@ -9,6 +9,12 @@ __pycache__/
 # Cython generated extension
 *.c
 
+# wandb logs
+wandb/
+
+# vscode artefacts
+.vscode/
+
 # Distribution / packaging
 .Python
 build/
