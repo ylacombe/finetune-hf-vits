@@ -33,9 +33,11 @@ The VITS checkpoints are released under the permissive [MIT License](https://ope
 ## 1. Requirements
 
 
-0. Install common requirements.
+0. Clone this repository and install common requirements.
 
 ```sh
+git clone git@github.com:ylacombe/finetune-hf-vits.git
+cd finetune-hf-vits
 pip install -r requirements.txt
 ```
 
