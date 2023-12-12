@@ -6,9 +6,9 @@ import torch
 from transformers.models.vits.modeling_vits import VitsModel
 from transformers.models.vits.tokenization_vits import VitsTokenizer
 
-from .feature_extraction_vits import VitsFeatureExtractor
-from .configuration_vits import VitsConfig, logging
-from .modeling_vits_training import VitsDiscriminator, VitsModelForPreTraining
+from utils.feature_extraction_vits import VitsFeatureExtractor
+from utils.configuration_vits import VitsConfig, logging
+from utils.modeling_vits_training import VitsDiscriminator, VitsModelForPreTraining
 
 logging.set_verbosity_info()
 logger = logging.get_logger("transformers.models.vits")
