@@ -107,8 +107,8 @@ Here is a non-exhaustive list of available checkpoint:
   <summary>Open for a checkpoints list </summary>
 
   * English
-    - `ylacombe/vits-ljs-train` (make sure [the phonemizer package is installed](https://bootphon.github.io/phonemizer/install.html)) - ideal for monolingual finetuning
-    - `ylacombe/vits_vctk_train` (make sure [the phonemizer package is installed](https://bootphon.github.io/phonemizer/install.html)) - ideal for multispeaker English finetuning.
+    - `ylacombe/vits-ljs-with-discriminator` (make sure [the phonemizer package is installed](https://bootphon.github.io/phonemizer/install.html)) - ideal for monolingual finetuning
+    - `ylacombe/vits-vctk-with-discriminator` (make sure [the phonemizer package is installed](https://bootphon.github.io/phonemizer/install.html)) - ideal for multispeaker English finetuning.
     - `ylacombe/mms-tts-eng-train` - if you want to avoid the use of the `phonemizer` package.
   * Spanish - `ylacombe/mms-tts-spa-train`
   * Korean - `ylacombe/mms-tts-kor-train`

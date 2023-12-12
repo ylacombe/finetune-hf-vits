@@ -21,7 +21,7 @@
     "min_duration_in_seconds": 1.0,
     "max_tokens_length": 500,
 
-    "model_name_or_path": "ylacombe/vits-ljs-train",
+    "model_name_or_path": "ylacombe/vits-ljs-with-discriminator",
 
 
     "preprocessing_num_workers": 4,
