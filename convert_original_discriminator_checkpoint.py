@@ -6,6 +6,8 @@ import torch
 from transformers.models.vits.modeling_vits import VitsModel
 from transformers.models.vits.tokenization_vits import VitsTokenizer
 
+from huggingface_hub import hf_hub_download
+
 from utils.feature_extraction_vits import VitsFeatureExtractor
 from utils.configuration_vits import VitsConfig, logging
 from utils.modeling_vits_training import VitsDiscriminator, VitsModelForPreTraining
@@ -23,6 +25,7 @@ IGNORE_KEYS = []
 
 @torch.no_grad()
 def convert_checkpoint(
+    language_code,
     pytorch_dump_folder_path,
     checkpoint_path=None,
     generator_checkpoint_path=None,
@@ -31,6 +34,10 @@ def convert_checkpoint(
     """
     Copy/paste/tweak model's weights to transformers design.
     """
+    if language_code is not None:
+        checkpoint_path = hf_hub_download(repo_id="facebook/mms-tts", subfolder=f"full_models/{language_code}", filename="D_100000.pth")
+        generator_checkpoint_path = f"facebook/mms-tts-{language_code}"
+    
     config = VitsConfig.from_pretrained(generator_checkpoint_path)
     generator = VitsModel.from_pretrained(generator_checkpoint_path)
 
@@ -95,11 +102,16 @@ def convert_checkpoint(
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
+    
+    parser.add_argument("--language_code", default=None, type=str, help="""If set, indicates the language code of the MMS checkpoint to convert. 
+                        In that case, it will automatically creates the right MMS checkpoint in the HF required format.
+                        If used, `checkpoint_path` and `generator_checkpoint_path` are ignored.""")
+    
     parser.add_argument(
-        "--checkpoint_path", default=None, type=str, help="Local path to original discriminator checkpoint"
+        "--checkpoint_path", default=None, type=str, help="Local path to original discriminator checkpoint. Ignored if `language_code` is used."
     )
     parser.add_argument(
-        "--generator_checkpoint_path", default=None, type=str, help="Path to the 🤗 generator (VitsModel)."
+        "--generator_checkpoint_path", default=None, type=str, help="Path to the 🤗 generator (VitsModel). Ignored if `language_code` is used."
     )
     parser.add_argument(
         "--pytorch_dump_folder_path", required=True, default=None, type=str, help="Path to the output PyTorch model."
@@ -107,9 +119,10 @@ if __name__ == "__main__":
     parser.add_argument(
         "--push_to_hub", default=None, type=str, help="Where to upload the converted model on the 🤗 hub."
     )
-
+    
     args = parser.parse_args()
     convert_checkpoint(
+        args.language_code,
         args.pytorch_dump_folder_path,
         args.checkpoint_path,
         args.generator_checkpoint_path,
