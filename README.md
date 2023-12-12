@@ -138,7 +138,7 @@ cd <path-to-finetune-hf-vits-repo>
 python convert_original_discriminator_checkpoint.py --language_code gri --pytorch_dump_folder_path <local-folder> --push_to_hub <repo-id-you-want>
 ```
 
-You can now use <repo-id-you-want> or <local-folder> as a starting point to finetune your model!
+You can now use `<repo-id-you-want>` or `<local-folder>` as a starting point to finetune your model!
 
 > [!NOTE]
 > You only need to do this step once per language.
