@@ -203,7 +203,38 @@ python convert_discriminator_vits --checkpoint_path PATH_TO_gri_D_10000.pth --ge
 
 ## Finetune VITS and MMS
 
-TODO
+There are two ways to run the finetuning scrip, both using command lines.
+
+**Preferred way: use a json config file**
+
+ > [!NOTE]
+> Using a config file is the prefered way to use the finetuning script as it includes the most important parameters to consider. For a full list of parameters, run `python run_vits_finetuning.py --help`. Note that some parameters are not ignored by the training script.
+
+
+The [training_config_examples](./training_config_examples) folder hosts examples of config files. Once satisfied with your config file, you can then finetune the model:
+
+```sh
+accelerate launch run_vits_finetuning.py PATH_TO_CONFIG
+```
+
+**Other option: pass parameters directly to the command line.**
+
+For example:
+
+```sh
+accelerate launch run_vits_finetuning.py --model_name_or_path MODEL_NAME_OR_PATH --output_dir OUTPUT_DIR ...
+```
+
+**Important parameters to consider:**
+* Everything related to artefacts: the `project_name` and the output directories (`hub_model_id`, `output_dir`) to keep track of the model.
+* The model to finetune: `model_name_or_path`
+* The dataset used `dataset_name` and its details: `dataset_config_name`, column names, etc. If there are multiple speakers and you want to only keep one, be careful to `speaker_id_column_name`, `override_speaker_embeddings` and `filter_on_speaker_id`. The latter allows to keep only one speaker but you can also train on multiple speakers.
+* The most important hyperparameters
+   - `learning_rate`
+   - `batch_size`
+   - the different losses weights: weight_duration, weight_kl, weight_mel, weight_disc, weight_gen, weight_fmaps
+
+
 
 ## Use the finetuned models
 
