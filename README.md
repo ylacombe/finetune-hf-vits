@@ -281,6 +281,6 @@ wget https://huggingface.co/facebook/mms-tts/resolve/main/full_models/gri/D_1000
 - Now convert the weights, and optionally push them to the hub. Simply remove `--push_to_hub TRAIN_CHECKPOINT_NAME` if you don't want to push to the hub:
 ```sh
 cd PATH_TO_THIS_REPO
-python convert_discriminator_vits --checkpoint_path PATH_TO_gri_D_10000.pth --generator_checkpoint_path "facebook/mms-tts-gri" --pytorch_dump_folder_path LOCAL_PATH_WHERE_TO_STORE_CHECKPOINT
+python convert_original_discriminator_checkpoint.py --checkpoint_path PATH_TO_gri_D_10000.pth --generator_checkpoint_path "facebook/mms-tts-gri" --pytorch_dump_folder_path LOCAL_PATH_WHERE_TO_STORE_CHECKPOINT
 --push_to_hub TRAIN_CHECKPOINT_NAME
 ```
