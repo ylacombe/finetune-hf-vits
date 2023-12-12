@@ -232,109 +232,14 @@ speech = synthesiser(uromanized_text)
 scipy.io.wavfile.write("finetuned_output.wav", rate=speech["sampling_rate"], data=speech["audio"])
 ```
 
-
-
----------------------
-
-## TL;DR pointers
-
-First and foremost, [install everything](#installation-steps).
-
-----------------------
-
-<details>
-  <summary>Open if you want to finetune an English model </summary>
-
-  1. Update this [English configuration template](training_config_examples/finetune_english.json) by:
-  * updating the `project_name` and the output artefacts (`hub_model_id`, `output_dir`) to keep track of the model.
-  
-  * updating `model_name_or_path` in the config with one of the following checkpoints: 
-    - `ylacombe/vits-ljs-train` (make sure [the phonemizer package is installed](https://bootphon.github.io/phonemizer/install.html)) - ideal for monolingual finetuning
-    - `ylacombe/vits_vctk_train` (make sure [the phonemizer package is installed](https://bootphon.github.io/phonemizer/install.html)) - ideal for multispeaker English finetuning.
-    - `ylacombe/mms-tts-eng-train` - if you want to avoid the use of the `phonemizer` package.
-  * selecting the dataset you want to finetune on and update the config, e.g the dataset by default in [`finetune_english.json`](training_config_examples/finetune_english.json) is a [British Isles accents dataset](https://huggingface.co/datasets/ylacombe/english_dialects):
-    - Make particular attention to the `dataset_name`, `dataset_config_name`, column names.
-    - If there are multiple speakers and you want to only keep one, be careful to `speaker_id_column_name`, `override_speaker_embeddings` and `filter_on_speaker_id`. The latter allows to keep only one speaker but you can also train on multiple speakers.
-
-  * (Optional - ) changing hyperparameters at your convenience.  
-  
-  2. Launch training:
-
-```sh
-accelerate launch run_vits_finetuning.py ./training_config_examples/finetune_english.json
-```
-
-  3. Use your [finetuned model](#use-the-finetuned-models)
-
-</details>
-
----------------------
-
-<details>
-  <summary>Open if you want to finetune on another language using MMS checkpoints</summary>
-
-  There are two options:
-
-  **Option 1: a training checkpoint is already available**
-
-<details>
-  <summary>Open for details </summary>
-
-  1. Update this [configuration template](training_config_examples/finetune_mms.json) by:
-  * updating the `project_name` and the output artefacts (`hub_model_id`, `output_dir`) to keep track of the model.
-  
-  * updating `model_name_or_path` in the config with the already existing checkpoint (e.g `"ylacombe/mms-tts-guj-train"`). 
-  * selecting the dataset you want to finetune on and update the config, e.g the dataset by default in [`finetune_mms.json`](training_config_examples/finetune_mms.json) is a [Gujarati dataset](https://huggingface.co/datasets/ylacombe/google-gujarati):
-    - Make particular attention to the `dataset_name`, `dataset_config_name`, column names.
-    - If there are multiple speakers and you want to only keep one, be careful to `speaker_id_column_name`, `override_speaker_embeddings` and `filter_on_speaker_id`. The latter allows to keep only one speaker but you can also train on multiple speakers.
-
-  * (Optional - ) changing hyperparameters at your convenience.  
-  
-  2. Launch training:
-
-```sh
-accelerate launch run_vits_finetuning.py ./training_config_examples/finetune_mms.json
-```
-
-  3. Use your [finetuned model](#use-the-finetuned-models)
-
-</details>
-
-  **Option 2: no training checkpoint is available for your language**
-<details> 
-  <summary>Open for details steps</summary>
-    
-
-
-1. Update this [configuration template](training_config_examples/finetune_mms.json) by:
-* updating the `project_name` and the output artefacts (`hub_model_id`, `output_dir`) to keep track of the model.
-
-* updating `model_name_or_path` in the config with the checkpoint you just created (e.g `LOCAL_PATH_WHERE_TO_STORE_CHECKPOINT` or the hub repo id `TRAIN_CHECKPOINT_NAME`). 
-* selecting the dataset you want to finetune on and update the config, e.g the dataset by default in [`finetune_mms.json`](training_config_examples/finetune_mms.json) is a [Gujarati dataset](https://huggingface.co/datasets/ylacombe/google-gujarati). With our example, it would be a Ghari dataset.
-- Make particular attention to the `dataset_name`, `dataset_config_name` and column names.
-- If there are multiple speakers and you want to only keep one, be careful to `speaker_id_column_name`, `override_speaker_embeddings` and `filter_on_speaker_id`. The latter allows to keep only one speaker but you can also train on multiple speakers.
-
-* (Optional - ) changing hyperparameters at your convenience.  
-
-2. Launch training:
-
-```sh
-accelerate launch run_vits_finetuning.py ./training_config_examples/finetune_mms.json
-```
-
-3. Use your finetuned model </details>
-
-</details>
-
 -----------------------------
 
 
 
 ## Acknowledgements
 
-It was proposed in 2021, in [Conditional Variational Autoencoder with Adversarial Learning for End-to-End Text-to-Speech](https://arxiv.org/abs/2106.06103) by Jaehyeon Kim, Jungil Kong, Juhee Son. 
 
-[VITS](https://huggingface.co/docs/transformers/model_doc/vits) is a light weight, low-latency TTS model.
-
-Massively Multilingual Speech ([MMS](https://arxiv.org/abs/2305.13516)) models are light-weight, low-latency TTS models based on the [VITS architecture](https://huggingface.co/docs/transformers/model_doc/vits). They support [1107 languages](https://huggingface.co/facebook/mms-tts#supported-languages). You can find more details about the supported languages and their ISO 639-3 codes in the [MMS Language Coverage Overview](https://dl.fbaipublicfiles.com/mms/misc/language_coverage_mms.html),
+* [VITS](https://huggingface.co/docs/transformers/model_doc/vits) was proposed in 2021, in [Conditional Variational Autoencoder with Adversarial Learning for End-to-End Text-to-Speech](https://arxiv.org/abs/2106.06103) by Jaehyeon Kim, Jungil Kong, Juhee Son. You can find the original codebase [here](https://github.com/jaywalnut310/vits).
+* [MMS](https://huggingface.co/facebook/mms-tts) was proposed in [Scaling Speech Technology to 1,000+ Languages](https://arxiv.org/abs/2305.13516) by Vineel Pratap, Andros Tjandra, Bowen Shi and co. You can find more details about the supported languages and their ISO 639-3 codes in the [MMS Language Coverage Overview](https://dl.fbaipublicfiles.com/mms/misc/language_coverage_mms.html),
 and see all MMS-TTS checkpoints on the Hugging Face Hub: [facebook/mms-tts](https://huggingface.co/models?sort=trending&search=facebook%2Fmms-tts).
+* [Hugging Face 🤗 Transformers](https://huggingface.co/docs/transformers/index) for the model integration, [Hugging Face 🤗 Accelerate](https://huggingface.co/docs/accelerate/index) for the distributed code and [Hugging Face 🤗 datasets](https://huggingface.co/docs/datasets/index) for facilitating datasets access.
