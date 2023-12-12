@@ -1,10 +1,10 @@
 {
     "project_name": "vits_english_dialect_welsh_female",
     "push_to_hub": true,
-    "hub_model_id": "vits_ljs_welsh_female_monospeaker_2",
-    "overwrite_output_dir": true,
-    "output_dir": "/home/yoach/tmp/vits_ljs_to_welsh_female_monospeaker_4",
+    "hub_model_id": "vits_ljs_welsh_female_monospeaker",
     "report_to": ["wandb"],
+    "overwrite_output_dir": true,
+    "output_dir": "/home/yoach/tmp/vits_finetuned",
 
     "dataset_name": "ylacombe/english_dialects",    
     "dataset_config_name": "welsh_female", 
@@ -24,7 +24,7 @@
     "model_name_or_path": "ylacombe/vits-ljs-train",
 
 
-    "preprocessing_num_workers": 1,
+    "preprocessing_num_workers": 4,
 
     "do_train": true,
     "num_train_epochs": 200,
@@ -42,7 +42,6 @@
     "per_device_eval_batch_size": 16,
     "max_eval_samples": 25, 
     "do_step_schedule_per_epoch": true,
-    "lr_scheduler_type": "inverse_sqrt",
 
     "weight_disc": 3,
     "weight_fmaps": 1,
