@@ -123,13 +123,7 @@ accelerate launch run_vits_finetuning.py ./training_configs/finetune_mms.json
 pip install -r requirements.txt
 ```
 
-1. Configure Accelerate by running the following command. [Accelerate](https://huggingface.co/docs/accelerate/index) is a library that enables the same PyTorch code to be run across any distributed configuration. Note that you only need one GPU to finetune VITS/MMS as the models are really lightweight (83M parameters):
-
-```bash
-accelerate config
-```
-
-2. Link your Hugging Face account so that you can pull/push model repositories on the Hub. This will allow you to save the finetuned weights on the Hub so that you can share them with the community and reuse them easily. Run the command:
+1. Link your Hugging Face account so that you can pull/push model repositories on the Hub. This will allow you to save the finetuned weights on the Hub so that you can share them with the community and reuse them easily. Run the command:
 
 ```bash
 git config --global credential.helper store
@@ -138,7 +132,7 @@ huggingface-cli login
 And then enter an authentication token from https://huggingface.co/settings/tokens. Create a new token if you do not have one already. You should make sure that this token has "write" privileges.
 
 
-3. Build the monotonic alignment search function using cython. This is absolutely necessary since the Python-native-version is awfully slow.
+2. Build the monotonic alignment search function using cython. This is absolutely necessary since the Python-native-version is awfully slow.
 ```sh
 # Cython-version Monotonoic Alignment Search
 cd monotonic_align
@@ -149,7 +143,7 @@ cd ..
 
 **Optional steps depending on the checkpoint/language you're using.**
 
-4. (Optional) If you're using an original VITS checkpoint, as opposed to MMS checkpoints, install **phonemizer**.
+3. (Optional) If you're using an original VITS checkpoint, as opposed to MMS checkpoints, install **phonemizer**.
 
 Follow steps indicated [here](https://bootphon.github.io/phonemizer/install.html).
 
@@ -165,7 +159,7 @@ pip install phonemizer
 ```
 </details>
 
-5. (Optional) With MMS checkpoints, some languages require to install **uroman**.
+4. (Optional) With MMS checkpoints, some languages require to install **uroman**.
 
 <details>
   <summary>Open for details </summary>
@@ -185,25 +179,9 @@ The rest is taking care of by the training script. Don't forget to adapt the inf
 </details>
 
 
-## Convert a discriminator checkpoint
-
-In the following steps, replace `gri` with the language code you identified [here](https://dl.fbaipublicfiles.com/mms/misc/language_coverage_mms.html) and DISCRIMINATOR_TEMPORARY_LOCATION with where you want to download the weights.
-
-- Download the original discriminator weights locally.  
-```sh
-cd DISCRIMINATOR_TEMPORARY_LOCATION
-wget https://huggingface.co/facebook/mms-tts/resolve/main/full_models/gri/D_100000.pth?download=true -O "gri_D_100000.pth"
-```
-- Now convert the weights, and optionally push them to the hub. Simply remove `--push_to_hub TRAIN_CHECKPOINT_NAME` if you don't want to push to the hub:
-```sh
-cd PATH_TO_THIS_REPO
-python convert_discriminator_vits --checkpoint_path PATH_TO_gri_D_10000.pth --generator_checkpoint_path "facebook/mms-tts-gri" --pytorch_dump_folder_path LOCAL_PATH_WHERE_TO_STORE_CHECKPOINT
---push_to_hub TRAIN_CHECKPOINT_NAME
-```
-
 ## Finetune VITS and MMS
 
-There are two ways to run the finetuning scrip, both using command lines.
+There are two ways to run the finetuning scrip, both using command lines. Note that you only need one GPU to finetune VITS/MMS as the models are really lightweight (83M parameters).
 
 **Preferred way: use a json config file**
 
@@ -286,4 +264,20 @@ uromanized_text = uromanize(text, uroman_path=os.environ["UROMAN"])
 speech = synthesiser(uromanized_text)
 
 scipy.io.wavfile.write("finetuned_output.wav", rate=speech["sampling_rate"], data=speech["audio"])
+```
+
+## Convert a discriminator checkpoint
+
+In the following steps, replace `gri` with the language code you identified [here](https://dl.fbaipublicfiles.com/mms/misc/language_coverage_mms.html) and DISCRIMINATOR_TEMPORARY_LOCATION with where you want to download the weights.
+
+- Download the original discriminator weights locally.  
+```sh
+cd DISCRIMINATOR_TEMPORARY_LOCATION
+wget https://huggingface.co/facebook/mms-tts/resolve/main/full_models/gri/D_100000.pth?download=true -O "gri_D_100000.pth"
+```
+- Now convert the weights, and optionally push them to the hub. Simply remove `--push_to_hub TRAIN_CHECKPOINT_NAME` if you don't want to push to the hub:
+```sh
+cd PATH_TO_THIS_REPO
+python convert_discriminator_vits --checkpoint_path PATH_TO_gri_D_10000.pth --generator_checkpoint_path "facebook/mms-tts-gri" --pytorch_dump_folder_path LOCAL_PATH_WHERE_TO_STORE_CHECKPOINT
+--push_to_hub TRAIN_CHECKPOINT_NAME
 ```
