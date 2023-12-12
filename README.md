@@ -174,7 +174,7 @@ export UROMAN=$(pwd)
 </details>
 
 
-### Convert a discriminator checkpoint
+## Convert a discriminator checkpoint
 
 In the following steps, replace `gri` with the language code you identified [here](https://dl.fbaipublicfiles.com/mms/misc/language_coverage_mms.html) and DISCRIMINATOR_TEMPORARY_LOCATION with where you want to download the weights.
 
@@ -189,3 +189,8 @@ cd PATH_TO_THIS_REPO
 python convert_discriminator_vits --checkpoint_path PATH_TO_gri_D_10000.pth --generator_checkpoint_path "facebook/mms-tts-gri" --pytorch_dump_folder_path LOCAL_PATH_WHERE_TO_STORE_CHECKPOINT
 --push_to_hub TRAIN_CHECKPOINT_NAME
 ```
+
+## Use the training script
+
+TODO
+
