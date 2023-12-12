@@ -3,16 +3,14 @@
 [VITS](https://huggingface.co/docs/transformers/model_doc/vits) is a light weight, low-latency TTS model.
 It was proposed in 2021, in [Conditional Variational Autoencoder with Adversarial Learning for End-to-End Text-to-Speech](https://arxiv.org/abs/2106.06103) by Jaehyeon Kim, Jungil Kong, Juhee Son. 
 
-Massively Multilingual Speech (MMS) models are light-weight, low-latency TTS models based on the [VITS architecture](https://huggingface.co/docs/transformers/model_doc/vits).
-
-Meta's [MMS](https://arxiv.org/abs/2305.13516) project, aims to provide speech technology across a diverse range of languages. You can find more details about the supported languages and their ISO 639-3 codes in the [MMS Language Coverage Overview](https://dl.fbaipublicfiles.com/mms/misc/language_coverage_mms.html),
+Massively Multilingual Speech ([MMS](https://arxiv.org/abs/2305.13516)) models are light-weight, low-latency TTS models based on the [VITS architecture](https://huggingface.co/docs/transformers/model_doc/vits). They support [1107 languages](https://huggingface.co/facebook/mms-tts#supported-languages). You can find more details about the supported languages and their ISO 639-3 codes in the [MMS Language Coverage Overview](https://dl.fbaipublicfiles.com/mms/misc/language_coverage_mms.html),
 and see all MMS-TTS checkpoints on the Hugging Face Hub: [facebook/mms-tts](https://huggingface.co/models?sort=trending&search=facebook%2Fmms-tts).
     
 Coupled with the right data and the right training recipe, you can get an excellent finetuned version of every MMS checkpoints in **20 minutes** with as little as **80 to 150 samples**.
 
 TODO: 
 - Uroman - add support and guidance: https://huggingface.co/docs/transformers/v4.36.0/en/model_doc/vits#usage-examples
-- 
+- Add automatic space deployment?
 
 
 > [!NOTE]
@@ -48,9 +46,8 @@ First and foremost, [install everything](#installation-steps).
 accelerate launch run_vits_finetuning.py ./training_configs/finetune_english.json
 ```
 
-  3. Use your finetuned model:
+  3. Use your [finetuned model](#use-the-finetuned-models)
 
-  - You can use your model with `output_dir` or `hub_model_id` if you decided to `push_to_the_hub`.
 </details>
 
 ---------------------
@@ -81,16 +78,15 @@ accelerate launch run_vits_finetuning.py ./training_configs/finetune_english.jso
 accelerate launch run_vits_finetuning.py ./training_configs/finetune_mms.json
 ```
 
-  3. Use your finetuned model:
+  3. Use your [finetuned model](#use-the-finetuned-models)
 
-  - You can use your model with `output_dir` or `hub_model_id` if you decided to `push_to_the_hub`.
 </details>
 
   **Option 2: no training checkpoint is available for your language**
 <details> 
   <summary>Open for details steps</summary>
     
-Let's say that you want have a text-to-speech dataset in Ghari, a Malayo-Polynesian language. First identify if there is a MMS checkpoint trained on this language by searching for the language in the [MMS Language Coverage Overview](https://dl.fbaipublicfiles.com/mms/misc/language_coverage_mms.html). If it is TTS-supported, identify the iso 693-3 language code, here `gri`.
+Let's say that you want have a text-to-speech dataset in Ghari, a Malayo-Polynesian language. First identify if there is a MMS checkpoint trained on this language by searching for the language in the [MMS Language Coverage Overview](https://dl.fbaipublicfiles.com/mms/misc/language_coverage_mms.html). If it is TTS-supported, identify the ISO 693-3 language code, here `gri`.
 
 Contrary to inference, finetuning requires the use of a discriminator that needs to be converted. 
 So you want to first creates a new checkpoint with this converted discriminator.
@@ -113,9 +109,7 @@ So you want to first creates a new checkpoint with this converted discriminator.
 accelerate launch run_vits_finetuning.py ./training_configs/finetune_mms.json
 ```
 
-3. Use your finetuned model:
-
-- You can use your model with `output_dir` or `hub_model_id` if you decided to `push_to_the_hub`. TODO use the model </details>
+3. Use your finetuned model </details>
 
 </details>
 
@@ -129,7 +123,22 @@ accelerate launch run_vits_finetuning.py ./training_configs/finetune_mms.json
 pip install -r requirements.txt
 ```
 
-1. Build the monotonic alignment search function using cython. This is absolutely necessary since the Python-native-version is awfully slow.
+1. Configure Accelerate by running the following command. [Accelerate](https://huggingface.co/docs/accelerate/index) is a library that enables the same PyTorch code to be run across any distributed configuration. Note that you only need one GPU to finetune VITS/MMS as the models are really lightweight (83M parameters):
+
+```bash
+accelerate config
+```
+
+2. Link your Hugging Face account so that you can pull/push model repositories on the Hub. This will allow you to save the finetuned weights on the Hub so that you can share them with the community and reuse them easily. Run the command:
+
+```bash
+git config --global credential.helper store
+huggingface-cli login
+```
+And then enter an authentication token from https://huggingface.co/settings/tokens. Create a new token if you do not have one already. You should make sure that this token has "write" privileges.
+
+
+3. Build the monotonic alignment search function using cython. This is absolutely necessary since the Python-native-version is awfully slow.
 ```sh
 # Cython-version Monotonoic Alignment Search
 cd monotonic_align
@@ -140,7 +149,7 @@ cd ..
 
 **Optional steps depending on the checkpoint/language you're using.**
 
-2. (Optional) If you're using an original VITS checkpoint, as opposed to MMS checkpoints, install **phonemizer**.
+4. (Optional) If you're using an original VITS checkpoint, as opposed to MMS checkpoints, install **phonemizer**.
 
 Follow steps indicated [here](https://bootphon.github.io/phonemizer/install.html).
 
@@ -156,21 +165,23 @@ pip install phonemizer
 ```
 </details>
 
-3. (Optional) With MMS checkpoints, some languages require to install **uroman**.
+5. (Optional) With MMS checkpoints, some languages require to install **uroman**.
 
 <details>
   <summary>Open for details </summary>
+    
+Some languages require to use `uroman` before feeding the text to `VitsTokenizer`, since currently the tokenizer does not support performing the pre-processing itself.
 
-If required, you should apply the uroman package to your text inputs prior to passing them to the VitsTokenizer, since currently the tokenizer does not support performing the pre-processing itself.
-
-
-To do this, first clone the uroman repository to your local machine and set the bash variable UROMAN to the local path:
+To do this, you need to clone the uroman repository to your local machine and set the bash variable UROMAN to the local path:
 
 ```sh
 git clone https://github.com/isi-nlp/uroman.git
 cd uroman
 export UROMAN=$(pwd)
 ```
+
+The rest is taking care of by the training script. Don't forget to adapt the inference snippet as indicated [here](#use-the-finetuned-models).
+
 </details>
 
 
@@ -190,7 +201,58 @@ python convert_discriminator_vits --checkpoint_path PATH_TO_gri_D_10000.pth --ge
 --push_to_hub TRAIN_CHECKPOINT_NAME
 ```
 
-## Use the training script
+## Finetune VITS and MMS
 
 TODO
 
+## Use the finetuned models
+
+You can use a finetuned model via the Text-to-Speech (TTS) [pipeline](https://huggingface.co/docs/transformers/main_classes/pipelines#transformers.pipeline) in just a few lines of code!
+Just replace `ylacombe/vits_ljs_welsh_female_monospeaker_2` with your own model id (`hub_model_id`) or path to the model (`output_dir`).
+
+```python
+from transformers import pipeline
+import scipy
+
+model_id = "ylacombe/vits_ljs_welsh_female_monospeaker_2"
+synthesiser = pipeline("text-to-speech", model_id) # add device=0 if you want to use a GPU
+
+speech = synthesiser("Hello, my dog is cooler than you!")
+
+scipy.io.wavfile.write("finetuned_output.wav", rate=speech["sampling_rate"], data=speech["audio"])
+```
+
+Note that if your model needs to use `uroman` to train, you also should apply the uroman package to your text inputs prior to passing them to the pipeline:
+
+```python
+import os
+import subprocess
+from transformers import pipeline
+import scipy
+
+model_id = "facebook/mms-tts-kor"
+synthesiser = pipeline("text-to-speech", model_id) # add device=0 if you want to use a GPU
+
+def uromanize(input_string, uroman_path):
+    """Convert non-Roman strings to Roman using the `uroman` perl package."""
+    script_path = os.path.join(uroman_path, "bin", "uroman.pl")
+
+    command = ["perl", script_path]
+
+    process = subprocess.Popen(command, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    # Execute the perl command
+    stdout, stderr = process.communicate(input=input_string.encode())
+
+    if process.returncode != 0:
+        raise ValueError(f"Error {process.returncode}: {stderr.decode()}")
+
+    # Return the output as a string and skip the new-line character at the end
+    return stdout.decode()[:-1]
+
+text = "이봐 무슨 일이야"
+uromanized_text = uromanize(text, uroman_path=os.environ["UROMAN"])
+
+speech = synthesiser(uromanized_text)
+
+scipy.io.wavfile.write("finetuned_output.wav", rate=speech["sampling_rate"], data=speech["audio"])
+```
