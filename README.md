@@ -30,9 +30,9 @@ First and foremost, [install everything](#installation-steps).
   <summary>Open if you want to finetune an English model </summary>
 
   1. Update this [English configuration template](training_config_examples/finetune_english.json) by:
-  * update the `project_name` and the output artefacts (`hub_model_id`, `output_dir`) to keep track of the model.
+  * updating the `project_name` and the output artefacts (`hub_model_id`, `output_dir`) to keep track of the model.
   
-  * update `model_name_or_path` in the config with one of the following checkpoints: 
+  * updating `model_name_or_path` in the config with one of the following checkpoints: 
     - `ylacombe/vits-ljs-train` (make sure [the phonemizer package is installed](https://bootphon.github.io/phonemizer/install.html)) - ideal for monolingual finetuning
     - `ylacombe/vits_vctk_train` (make sure [the phonemizer package is installed](https://bootphon.github.io/phonemizer/install.html)) - ideal for multispeaker English finetuning.
     - `ylacombe/mms-tts-eng-train` - if you want to avoid the use of the `phonemizer` package.
@@ -62,32 +62,64 @@ accelerate launch run_vits_finetuning.py ./training_configs/finetune_english.jso
 
   **Option 1: a training checkpoint is already available**
 
-  0. (Do once) - create a new checkpoint that includes the discriminator.
+<details>
+  <summary>Open for details </summary>
 
-  Contrary to inference, finetuning requires the use of a discriminator that needs to be converted. 
-  So you want to first creates a new checkpoint with this converted discriminator.
-  <details> <summary>Open for details steps</summary>
-  1. 
-
-  </details>
-
-
-
-
-  1. 
-
-  1. Update this [English configuration template](training_config_examples/finetune_english.json) by:
+  1. Update this [configuration template](training_config_examples/finetune_mms.json) by:
+  * updating the `project_name` and the output artefacts (`hub_model_id`, `output_dir`) to keep track of the model.
   
-  - selecting one of the following checkpoints and update the config: TODO
-  - selecting the dataset you want to finetune on and update the config. E.g 
-  - (Optional - ) changin hyperparameters at your convenience.  
+  * updating `model_name_or_path` in the config with the already existing checkpoint (e.g `"ylacombe/mms-tts-guj-train"`). 
+  * selecting the dataset you want to finetune on and update the config, e.g the dataset by default in [`finetune_mms.json`](training_config_examples/finetune_mms.json) is a [Gujarati dataset](https://huggingface.co/datasets/ylacombe/google-gujarati):
+    - Make particular attention to the `dataset_name`, `dataset_config_name`, column names.
+    - If there are multiple speakers and you want to only keep one, be careful to `speaker_id_column_name`, `override_speaker_embeddings` and `filter_on_speaker_id`. The latter allows to keep only one speaker but you can also train on multiple speakers.
+
+  * (Optional - ) changing hyperparameters at your convenience.  
   
   2. Launch training:
 
 ```sh
-accelerate launch run_vits_finetuning.py ./training_configs/finetune_english.json
+accelerate launch run_vits_finetuning.py ./training_configs/finetune_mms.json
 ```
+
+  3. Use your finetuned model:
+
+  - You can use your model with `output_dir` or `hub_model_id` if you decided to `push_to_the_hub`.
 </details>
+
+  **Option 2: no training checkpoint is available for your language**
+<details> 
+  <summary>Open for details steps</summary>
+    
+Let's say that you want have a text-to-speech dataset in Ghari, a Malayo-Polynesian language. First identify if there is a MMS checkpoint trained on this language by searching for the language in the [MMS Language Coverage Overview](https://dl.fbaipublicfiles.com/mms/misc/language_coverage_mms.html). If it is TTS-supported, identify the iso 693-3 language code, here `gri`.
+
+Contrary to inference, finetuning requires the use of a discriminator that needs to be converted. 
+So you want to first creates a new checkpoint with this converted discriminator.
+
+0. (Do once) - create a new checkpoint that includes the discriminator. See [here](#convert-a-discriminator-checkpoint) for more details on how to convert the discriminator.
+
+1. Update this [configuration template](training_config_examples/finetune_mms.json) by:
+* updating the `project_name` and the output artefacts (`hub_model_id`, `output_dir`) to keep track of the model.
+
+* updating `model_name_or_path` in the config with the checkpoint you just created (e.g `LOCAL_PATH_WHERE_TO_STORE_CHECKPOINT` or the hub repo id `TRAIN_CHECKPOINT_NAME`). 
+* selecting the dataset you want to finetune on and update the config, e.g the dataset by default in [`finetune_mms.json`](training_config_examples/finetune_mms.json) is a [Gujarati dataset](https://huggingface.co/datasets/ylacombe/google-gujarati). With our example, it would be a Ghari dataset.
+- Make particular attention to the `dataset_name`, `dataset_config_name` and column names.
+- If there are multiple speakers and you want to only keep one, be careful to `speaker_id_column_name`, `override_speaker_embeddings` and `filter_on_speaker_id`. The latter allows to keep only one speaker but you can also train on multiple speakers.
+
+* (Optional - ) changing hyperparameters at your convenience.  
+
+2. Launch training:
+
+```sh
+accelerate launch run_vits_finetuning.py ./training_configs/finetune_mms.json
+```
+
+3. Use your finetuned model:
+
+- You can use your model with `output_dir` or `hub_model_id` if you decided to `push_to_the_hub`. TODO use the model </details>
+
+</details>
+
+-----------------------------
 
 ## Installation steps
 
@@ -142,21 +174,18 @@ export UROMAN=$(pwd)
 </details>
 
 
-2. Option: create a new checkpoint
-<details>
-  <summary>Open for details</summary>
+### Convert a discriminator checkpoint
 
-  ### Heading
-  1. Foo
-  2. Bar
-     * Baz
-     * Qux
+In the following steps, replace `gri` with the language code you identified [here](https://dl.fbaipublicfiles.com/mms/misc/language_coverage_mms.html) and DISCRIMINATOR_TEMPORARY_LOCATION with where you want to download the weights.
 
-  ### Some Javascript
-  ```js
-  function logSomething(something) {
-    console.log('Something', something);
-  }
-  ```
-</details>
-
+- Download the original discriminator weights locally.  
+```sh
+cd DISCRIMINATOR_TEMPORARY_LOCATION
+wget https://huggingface.co/facebook/mms-tts/resolve/main/full_models/gri/D_100000.pth?download=true -O "gri_D_100000.pth"
+```
+- Now convert the weights, and optionally push them to the hub. Simply remove `--push_to_hub TRAIN_CHECKPOINT_NAME` if you don't want to push to the hub:
+```sh
+cd PATH_TO_THIS_REPO
+python convert_discriminator_vits --checkpoint_path PATH_TO_gri_D_10000.pth --generator_checkpoint_path "facebook/mms-tts-gri" --pytorch_dump_folder_path LOCAL_PATH_WHERE_TO_STORE_CHECKPOINT
+--push_to_hub TRAIN_CHECKPOINT_NAME
+```
