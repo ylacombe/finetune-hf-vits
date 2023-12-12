@@ -2,7 +2,6 @@
     "project_name": "vits_english_dialect_welsh_female",
     "push_to_hub": true,
     "hub_model_id": "vits_ljs_welsh_female_monospeaker",
-    "report_to": ["wandb"],
     "overwrite_output_dir": true,
     "output_dir": "./tmp/vits_finetuned",
 

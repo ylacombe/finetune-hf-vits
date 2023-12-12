@@ -185,6 +185,9 @@ accelerate launch run_vits_finetuning.py --model_name_or_path MODEL_NAME_OR_PATH
    - the different losses weights: weight_duration, weight_kl, weight_mel, weight_disc, weight_gen, weight_fmaps
 
 
+ > [!NOTE]
+> The [training_config_examples](./training_config_examples) also contains two other examples, one to finetune a Gujarati checkpoint and another to finetune a Korean checkpoint. Those examples also shows how to track experiments using [wandb](https://github.com/wandb/wandb).
+
 
 ## 4. Inference
 
