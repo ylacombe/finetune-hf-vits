@@ -14,6 +14,8 @@ from typing import Any, Dict, List, Optional, Union
 import datasets
 import numpy as np
 import torch
+import os
+
 from accelerate import Accelerator, DistributedDataParallelKwargs
 from accelerate.utils import ProjectConfiguration, is_wandb_available, set_seed
 from datasets import DatasetDict, load_dataset
@@ -31,7 +33,7 @@ from transformers.optimization import get_scheduler
 from transformers.trainer_pt_utils import LengthGroupedSampler
 from transformers.trainer_utils import get_last_checkpoint, is_main_process
 from transformers.utils import send_example_telemetry
-from utils import plot_alignment_to_numpy, plot_spectrogram_to_numpy, VitsDiscriminator, VitsModelForPreTraining, VitsFeatureExtractor, slice_segments, VitsConfig
+from utils import plot_alignment_to_numpy, plot_spectrogram_to_numpy, VitsDiscriminator, VitsModelForPreTraining, VitsFeatureExtractor, slice_segments, VitsConfig, uromanize
 
 
 if is_wandb_available():
@@ -279,7 +281,16 @@ class DataTrainingArguments:
             )
         },
     )
-
+    uroman_path: str = field(
+        default=None,
+        metadata={
+            "help": (
+                "Absolute path to the uroman package. To use if your model requires `uroman`."
+                "An easy way to check it is to go on your model card and manually check `is_uroman` in the `tokenizer_config.json,"
+                "e.g the French checkpoint doesn't need it: https://huggingface.co/facebook/mms-tts-fra/blob/main/tokenizer_config.json#L4"
+            )
+        },
+    )
 
 # DATA COLLATOR
 
@@ -666,6 +677,15 @@ def main():
     speaker_id_column_name = data_args.speaker_id_column_name
     filter_on_speaker_id = data_args.filter_on_speaker_id
     do_normalize = data_args.do_normalize
+    is_uroman = tokenizer.is_uroman
+    if is_uroman:
+        uroman_path = data_args.uroman_path if data_args.uroman_path is not None else os.environ.get("UROMAN")
+        if uroman_path is None:
+            raise ValueError(
+            f"The checkpoint that you're using needs the uroman package, but this one is not specified."
+            "Make sure to clone the uroman package (`git clone https://github.com/isi-nlp/uroman.git`),"
+            "and to set `uroman_path=PATH_TO_UROMAN`."
+        )
 
     num_speakers = config.num_speakers
 
@@ -711,6 +731,9 @@ def main():
 
         # process text inputs
         input_str = batch[text_column_name].lower() if do_lower_case else batch[text_column_name]
+        
+        if is_uroman:
+            input_str = uromanize(input_str, uroman_path=uroman_path)
         string_inputs = tokenizer(input_str, return_attention_mask=forward_attention_mask)
 
         batch[model_input_name] = string_inputs.get("input_ids")[: data_args.max_tokens_length + 1]
@@ -828,7 +851,11 @@ def main():
         forward_attention_mask=forward_attention_mask,
     )
 
-    full_generation_sample = tokenizer(data_args.full_generation_sample_text, return_tensors="pt")
+    with training_args.main_process_first():
+        input_str = data_args.full_generation_sample_text
+        if is_uroman:
+            input_str = uromanize(input_str, uroman_path=uroman_path)
+        full_generation_sample = tokenizer(input_str, return_tensors="pt")
 
     # 11. Set up accelerate
     project_name = data_args.project_name

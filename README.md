@@ -9,7 +9,6 @@ and see all MMS-TTS checkpoints on the Hugging Face Hub: [facebook/mms-tts](http
 Coupled with the right data and the right training recipe, you can get an excellent finetuned version of every MMS checkpoints in **20 minutes** with as little as **80 to 150 samples**.
 
 TODO: 
-- Uroman - add support and guidance: https://huggingface.co/docs/transformers/v4.36.0/en/model_doc/vits#usage-examples
 - Add automatic space deployment?
 - Report to wandb
 - Mention GPU usage and so on
