@@ -25,7 +25,7 @@ Try out these spaces:
 
 
 <details>
-  <summary>Open to hear examples of before and after finetuning </summary>
+  <summary>Open to listen to snippets of before and after finetuning </summary>
     
 https://github.com/ylacombe/finetune-hf-vits/assets/52246514/5f1fb903-59b8-4c0d-9bee-6a50c63c2bfa
 
