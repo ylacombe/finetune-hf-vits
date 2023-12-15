@@ -17,6 +17,23 @@ Finetuning VITS or MMS requires multiples stages to be completed in successive o
 3. [Finetune the model](#3-finetuning)
 4. [Optional - how to use the finetuned model](#4-inference)
 
+## Samples and demo
+
+Try out these spaces:
+- [Explore English and Spanish finetuning on accents](https://huggingface.co/spaces/hf-audio/explore-vits)
+- [Explore finetuning on Spanish, English, Tamil, Gujarati, Marathi](https://huggingface.co/spaces/hf-audio/compare-vits-finetuned)
+
+
+<details>
+  <summary>Open to hear examples of before and after finetuning </summary>
+    
+https://github.com/ylacombe/finetune-hf-vits/assets/52246514/5f1fb903-59b8-4c0d-9bee-6a50c63c2bfa
+
+</details>
+
+
+
+
 
 ## License
 The VITS checkpoints are released under the permissive [MIT License](https://opensource.org/license/mit/). The MMS checkpoints, on the other hand, are licensed under [CC BY-NC 4.0](https://creativecommons.org/licenses/by-nc/4.0/), a non-commercial license. 
