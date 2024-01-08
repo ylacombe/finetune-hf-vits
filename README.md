@@ -216,7 +216,7 @@ synthesiser = pipeline("text-to-speech", model_id) # add device=0 if you want to
 
 speech = synthesiser("Hello, my dog is cooler than you!")
 
-scipy.io.wavfile.write("finetuned_output.wav", rate=speech["sampling_rate"], data=speech["audio"])
+scipy.io.wavfile.write("finetuned_output.wav", rate=speech["sampling_rate"], data=speech["audio"][0])
 ```
 
 Note that if your model needs to use `uroman` to train, you also should apply the uroman package to your text inputs prior to passing them to the pipeline:
@@ -251,7 +251,7 @@ uromanized_text = uromanize(text, uroman_path=os.environ["UROMAN"])
 
 speech = synthesiser(uromanized_text)
 
-scipy.io.wavfile.write("finetuned_output.wav", rate=speech["sampling_rate"], data=speech["audio"])
+scipy.io.wavfile.write("finetuned_output.wav", rate=speech["sampling_rate"], data=speech["audio"][0])
 ```
 
 -----------------------------
