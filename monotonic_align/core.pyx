@@ -29,7 +29,7 @@ cdef void maximum_path_each(int[:,::1] path, float[:,::1] value, int t_y, int t_
 
   for y in range(t_y - 1, -1, -1):
     path[y, index] = 1
-    if index != 0 and (index == y or value[y-1, index] < value[y-1, index-1]):
+    if index != 0 and y!= 0 and (index == y or value[y-1, index] < value[y-1, index-1]):
       index = index - 1
 
 
