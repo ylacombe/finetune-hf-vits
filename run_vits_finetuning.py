@@ -680,6 +680,7 @@ def main():
     filter_on_speaker_id = data_args.filter_on_speaker_id
     do_normalize = data_args.do_normalize
     is_uroman = tokenizer.is_uroman
+    uroman_path = None
     if is_uroman:
         uroman_path = data_args.uroman_path if data_args.uroman_path is not None else os.environ.get("UROMAN")
         if uroman_path is None:
@@ -702,6 +703,7 @@ def main():
             raw_datasets["eval"] = raw_datasets["eval"].select(range(data_args.max_eval_samples))
 
     speaker_id_dict = {}
+    new_num_speakers = 0
     if speaker_id_column_name is not None:
         if training_args.do_train:
             # if filter_on_speaker_id, filter so that we keep only the speaker id
@@ -736,10 +738,9 @@ def main():
         
         if is_uroman:
             input_str = uromanize(input_str, uroman_path=uroman_path)
-        string_inputs = tokenizer(input_str, return_attention_mask=forward_attention_mask)
+        string_inputs = tokenizer(input_str, return_attention_mask=False)
 
         batch[model_input_name] = string_inputs.get("input_ids")[: max_tokens_length + 1]
-
         batch["waveform_input_length"] = len(sample["array"])
         batch["tokens_input_length"] = len(batch[model_input_name])
         batch["waveform"] = batch[audio_column_name]["array"]
