@@ -1478,14 +1478,16 @@ def main():
         model.save_pretrained(training_args.output_dir)
 
         if training_args.push_to_hub:
-            VitsModel.from_pretrained(training_args.output_dir).push_to_hub(training_args.hub_model_id)
+            VitsModel.from_pretrained(training_args.output_dir).push_to_hub(training_args.hub_model_id, private = training_args.hub_private_repo, token = training_args.hub_token)
+
 
     accelerator.end_training()
 
     # 13. Push FE and tokenizer
     if training_args.push_to_hub:
-        feature_extractor.push_to_hub(training_args.hub_model_id)
-        tokenizer.push_to_hub(training_args.hub_model_id)
+        feature_extractor.push_to_hub(training_args.hub_model_id, private = training_args.hub_private_repo, token = training_args.hub_token)
+        tokenizer.push_to_hub(training_args.hub_model_id, private = training_args.hub_private_repo, token = training_args.hub_token)
+
 
     logger.info("***** Training / Inference Done *****")
 
